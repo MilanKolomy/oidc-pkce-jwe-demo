@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Certificate registry API</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui.css">
+</head>
+<body>
+
+<div id="swagger"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui-bundle.js" crossorigin="anonymous"></script>
+<script>
+    // The specification is served by the application: docs/openapi.yaml lives outside
+    // the docroot, and a copy in here would be a second version of the contract that
+    // could drift from the first.
+    window.ui = SwaggerUIBundle({
+        url: '/swagger/openapi.yaml',
+        dom_id: '#swagger',
+        deepLinking: true,
+        // The API is authorised by an HttpOnly cookie the browser sends by itself,
+        // so "Try it out" works after signing in and there is nothing to paste here.
+        withCredentials: true,
+        tryItOutEnabled: true
+    });
+</script>
+
+</body>
+</html>

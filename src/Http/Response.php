@@ -34,6 +34,11 @@ final class Response
         return new self($status, ['Content-Type' => 'text/html; charset=utf-8'], $html);
     }
 
+    public static function yaml(string $yaml): self
+    {
+        return new self(200, ['Content-Type' => 'application/yaml; charset=utf-8'], $yaml);
+    }
+
     public static function redirect(string $url): self
     {
         return new self(302, ['Location' => $url], '');

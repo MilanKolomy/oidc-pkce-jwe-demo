@@ -20,6 +20,7 @@ rozhodnutí to dřívější zruší, vzniká nový záznam a starý dostane sta
 | [0005](0005-bez-frameworku.md) | Bez aplikačního frameworku | přijato | 16. 8. 2026 |
 | [0006](0006-404-misto-403.md) | Odpověď 404 místo 403 u cizích záznamů | přijato | 16. 8. 2026 |
 | [0007](0007-verzovani-api.md) | Verzování rozhraní v cestě | přijato | 16. 8. 2026 |
+| [0008](0008-minimalni-rozhrani.md) | Záměrně minimální uživatelské rozhraní | přijato | 16. 8. 2026 |
 
 ---
 
@@ -32,3 +33,5 @@ Některá rozhodnutí na sebe navazují:
 - **0002 → 0004** — ochrana PKCE ukládá hodnoty do relace, čímž se nastavení relační
   cookie stává součástí bezpečnostního návrhu.
 - **0006** rozvíjí autorizační model z kapitoly 5 návrhu řešení.
+- **0005 → 0008** — rozhodnutí obejít se bez frameworku se v rozhraní opakuje: obyčejné
+  šablony a hotové styly místo vlastního řešení.

@@ -35,6 +35,7 @@ use App\Token\TokenVerifier;
 use App\Web\AuthController;
 use App\Web\CertificateController as PageCertificateController;
 use App\Web\ProfileController;
+use App\Web\SpecificationController;
 use App\Web\View;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -125,6 +126,7 @@ try {
     $router->add('GET', '/certificates/{certificateId}', $pages->show(...));
     $router->add('POST', '/certificates/{certificateId}/checks', $pages->check(...));
     $router->add('GET', '/profile', (new ProfileController($authentication, $view, $users, $certificateRepository))->show(...));
+    $router->add('GET', '/swagger/openapi.yaml', (new SpecificationController($root . '/docs/openapi.yaml'))->show(...));
 
     // The six endpoints of docs/openapi.yaml, and nothing beyond them.
     $router->add('GET', '/api/v1/me', (new UserController($authentication, $users))->show(...));

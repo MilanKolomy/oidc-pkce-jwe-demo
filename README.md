@@ -51,7 +51,7 @@ při čtení.
 | [02 — Omezení prostředí](docs/02-omezeni-prostredi.md) | Co bylo na cílovém hostingu ověřeno a jak to ovlivnilo návrh |
 | [03 — Návrh řešení](docs/03-navrh-reseni.md) | Architektura, přihlašovací tok, tokeny, autorizační model |
 | [04 — Datový model](docs/04-datovy-model.md) | Entity, klíče, indexy a zdůvodnění zvolených typů |
-| [Záznamy o rozhodnutích](docs/adr/README.md) | Sedm rozhodnutí včetně zvažovaných variant a přijatých nevýhod |
+| [Záznamy o rozhodnutích](docs/adr/README.md) | Osm rozhodnutí včetně zvažovaných variant a přijatých nevýhod |
 | [Specifikace rozhraní](docs/openapi.yaml) | OpenAPI 3.1 |
 | [05 — Možná rozšíření](docs/05-mozna-rozsireni.md) | Kudy by šlo pokračovat a co je nejbližší krok |
 
@@ -125,7 +125,16 @@ Těžištěm je `docs/`. Kód slouží jako doklad realizovatelnosti návrhu.
 
 ## Stav
 
-Dokumentace je dokončena. Implementace probíhá.
+Dokumentace i implementace jsou dokončeny.
+
+Aplikace běží lokálně v celém rozsahu: přihlášení účtem Google, vložení certifikátu,
+detail, kontrola platnosti, všech šest endpointů rozhraní a Swagger UI. Na produkci
+zatím nasazena není.
+
+Vývojové prostředí je popsáno v [02 — Omezení prostředí](docs/02-omezeni-prostredi.md).
+Nasazení spočívá v nahrání souborů včetně adresáře `vendor/`, vytvoření schématu podle
+[`database/schema.sql`](database/schema.sql), doplnění `.env` podle `.env.example`
+a vytvoření šifrovacího klíče podle [`keys/README.md`](keys/README.md).
 
 ---
 
