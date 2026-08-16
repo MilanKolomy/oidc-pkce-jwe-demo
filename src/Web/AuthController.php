@@ -32,6 +32,8 @@ final class AuthController
     private const SESSION_VERIFIER = 'oidc_code_verifier';
 
     public function __construct(
+        private readonly Authentication $authentication,
+        private readonly View $view,
         private readonly Discovery $discovery,
         private readonly TokenClient $tokenClient,
         private readonly IdTokenValidator $idTokenValidator,
@@ -41,6 +43,43 @@ final class AuthController
         private readonly Logger $logger,
         private readonly string $clientId,
     ) {
+    }
+
+    /**
+     * The sign-in page, or the list for someone already signed in.
+     */
+    public function home(Request $request): Response
+    {
+        if ($this->authentication->optionalUserId($request) !== null) {
+            return Response::redirect('/certificates');
+        }
+
+        return Response::html($this->view->page('login', 'Sign in', null));
+    }
+
+    /**
+     * Ends the local session and discards the token.
+     *
+     * Google is not signed out of: it offers no client-initiated logout worth relying
+     * on, so the user stays signed in there. Said plainly in the documentation rather
+     * than implied (docs/03-navrh-reseni.md, section 10).
+     */
+    public function logout(): Response
+    {
+        Session::start();
+
+        $_SESSION = [];
+        session_destroy();
+
+        setcookie(Authentication::COOKIE_NAME, '', [
+            'expires' => 1,
+            'path' => '/',
+            'secure' => true,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+
+        return Response::redirect('/');
     }
 
     public function login(): Response

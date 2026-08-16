@@ -33,4 +33,18 @@ final class Authentication
 
         return $this->verifier->verify($token);
     }
+
+    /**
+     * The same check, for the pages. A browser that is not signed in should be sent
+     * to the sign-in page rather than shown a 401 document, so the absence of a
+     * usable token is an answer here rather than a refusal.
+     */
+    public function optionalUserId(Request $request): ?int
+    {
+        try {
+            return $this->userId($request);
+        } catch (UnauthorizedException) {
+            return null;
+        }
+    }
 }

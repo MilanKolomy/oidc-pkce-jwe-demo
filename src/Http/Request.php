@@ -10,12 +10,18 @@ final class Request
      * @param array<string, string> $query
      * @param array<string, string> $cookies
      */
+    /**
+     * @param array<string, string> $query
+     * @param array<string, string> $cookies
+     * @param array<string, string> $form the decoded body of an HTML form submission
+     */
     public function __construct(
         public readonly string $method,
         public readonly string $path,
         public readonly array $query,
         public readonly array $cookies,
         public readonly string $body,
+        public readonly array $form = [],
     ) {
     }
 
@@ -30,6 +36,7 @@ final class Request
             array_map('strval', $_GET),
             array_map('strval', $_COOKIE),
             (string) file_get_contents('php://input'),
+            array_map('strval', array_filter($_POST, 'is_scalar')),
         );
     }
 

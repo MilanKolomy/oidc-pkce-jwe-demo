@@ -13,6 +13,7 @@ use App\Exception\ConfigurationException;
 use App\Exception\HttpException;
 use App\Http\Problem;
 use App\Http\Request;
+use App\Http\Response;
 use App\Http\Router;
 use App\Http\Session;
 use App\Http\UrlBuilder;
@@ -32,6 +33,9 @@ use App\Token\TokenIssuer;
 use App\Token\TokenKey;
 use App\Token\TokenVerifier;
 use App\Web\AuthController;
+use App\Web\CertificateController as PageCertificateController;
+use App\Web\ProfileController;
+use App\Web\View;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -56,7 +60,12 @@ try {
     $database = new Database($config);
 
     $tokenKey = TokenKey::fromFile($root . '/keys/app-token.key');
+    $authentication = new Authentication(new TokenVerifier($tokenKey));
+    $view = new View($root . '/templates');
+
     $auth = new AuthController(
+        $authentication,
+        $view,
         new Discovery($httpClient),
         new TokenClient($httpClient, $config->googleClientId, $config->googleClientSecret),
         new IdTokenValidator(new JwksCache($httpClient, $root . '/var/jwks.json'), $config->googleClientId),
@@ -67,26 +76,55 @@ try {
         $config->googleClientId,
     );
 
-    $authentication = new Authentication(new TokenVerifier($tokenKey));
     $users = new UserRepository($database);
+    $certificateRepository = new CertificateRepository($database);
+    $authorityRepository = new CertificateAuthorityRepository($database);
+    $keyUsageRepository = new KeyUsageRepository($database);
+    $checkRepository = new CertificateCheckRepository($database);
+    $parser = new CertificateParser();
+    $validity = new ValidityChecker();
 
     $certificates = new CertificateController(
         $authentication,
         $database,
-        new CertificateRepository($database),
-        new CertificateAuthorityRepository($database),
-        new KeyUsageRepository($database),
-        new CertificateCheckRepository($database),
-        new CertificateParser(),
-        new ValidityChecker(),
+        $certificateRepository,
+        $authorityRepository,
+        $keyUsageRepository,
+        $checkRepository,
+        $parser,
+        $validity,
         $urls,
+        $logger,
+    );
+
+    $pages = new PageCertificateController(
+        $authentication,
+        $view,
+        $database,
+        $users,
+        $certificateRepository,
+        $authorityRepository,
+        $keyUsageRepository,
+        $checkRepository,
+        $parser,
+        $validity,
         $logger,
     );
 
     $router = new Router();
 
+    // Pages. The one for adding a certificate is registered before the one for a
+    // certificate by identifier, because "new" would otherwise match the placeholder.
+    $router->add('GET', '/', $auth->home(...));
     $router->add('GET', '/login', $auth->login(...));
     $router->add('GET', '/callback', $auth->callback(...));
+    $router->add('GET', '/logout', $auth->logout(...));
+    $router->add('GET', '/certificates', $pages->index(...));
+    $router->add('GET', '/certificates/new', $pages->form(...));
+    $router->add('POST', '/certificates', $pages->create(...));
+    $router->add('GET', '/certificates/{certificateId}', $pages->show(...));
+    $router->add('POST', '/certificates/{certificateId}/checks', $pages->check(...));
+    $router->add('GET', '/profile', (new ProfileController($authentication, $view, $users, $certificateRepository))->show(...));
 
     // The six endpoints of docs/openapi.yaml, and nothing beyond them.
     $router->add('GET', '/api/v1/me', (new UserController($authentication, $users))->show(...));
@@ -110,7 +148,16 @@ try {
         ]);
     }
 
-    $response = Problem::fromException($exception, $request->path);
+    // The API answers in RFC 7807; a browser gets a page. Same outcome, different
+    // audience — a JSON document is not an answer to someone following a link.
+    $response = $request->isApi() || !isset($view)
+        ? Problem::fromException($exception, $request->path)
+        : Response::html($view->page('error', $exception->title(), null, [
+            'status' => $exception->status(),
+            'heading' => $exception->title(),
+            'detail' => $exception->detail() ?? '',
+            'correlationId' => null,
+        ]), $exception->status());
 } catch (ConfigurationException $exception) {
     // Startup failed before the environment was known, so the response is the careful
     // one either way. The message names what is missing, never a value, and goes to
