@@ -108,7 +108,7 @@ důvěrnost, tedy šifrování.
 
 Použité schéma je `alg=dir` se symetrickým klíčem a `enc=A256GCM`. Token vydává i ověřuje
 tatáž aplikace, takže asymetrická varianta by přidala složitost bez přínosu.
-Viz `adr/0006-dir-a256gcm.md`.
+Viz `adr/0003-jwe-aplikacni-token.md`.
 
 **Obsah vlastního tokenu:** `iss`, `sub` (interní identifikátor uživatele), `iat`, `exp`,
 `jti`. Jméno ani e-mail v tokenu nejsou — API je umí načíst z databáze a token tak nenese
@@ -132,7 +132,7 @@ certifikátů nemá metodu „najdi podle identifikátoru", pouze „najdi podle
 a vlastníka". Tím je vyloučeno, že by kontrola byla někde opomenuta.
 
 Požadavek na cizí záznam vrací **404, nikoli 403**. Odpověď 403 by potvrdila, že záznam
-s daným identifikátorem existuje, což je únik informace. Viz `adr/0007-404-misto-403.md`.
+s daným identifikátorem existuje, což je únik informace. Viz `adr/0006-404-misto-403.md`.
 
 Certifikační autority vznikají automaticky při prvním výskytu, párované na rozlišovací
 jméno subjektu. **Nepatří uživateli, který je založil** — jinak by dva uživatelé
@@ -182,12 +182,16 @@ Rozhraní je popsáno specifikací OpenAPI 3.1 a vyzkoušitelné přes Swagger U
 
 **Verzování** je v cestě (`/api/v1/`). Verze je viditelná v logu i v příkazu curl,
 umožňuje souběžný provoz více verzí a nekomplikuje cachování. Viz
-`adr/0008-verzovani-api.md`.
+`adr/0007-verzovani-api.md`.
 
 **Chybové odpovědi** používají formát RFC 7807 (`application/problem+json`) — NFR-06.
 Formát je ve specifikaci definován jako sdílené schéma. Používané stavy: 400 neplatný
 požadavek, 401 chybějící nebo neplatný token, 404 neexistující nebo cizí záznam,
-422 selhání validace vstupu, 500 interní chyba s korelačním identifikátorem.
+409 certifikát již uživatelem evidován, 422 selhání validace vstupu, 500 interní chyba
+s korelačním identifikátorem.
+
+Stav 409 plyne z unikátního omezení `(user_id, fingerprint_sha256)` v datovém modelu —
+tentýž certifikát smí evidovat více uživatelů, jeden uživatel jej však nevloží dvakrát.
 
 ---
 
@@ -246,8 +250,8 @@ prostředí. Jsou uvedeny, aby nebyly objeveny jako překvapení.
 |---|---|
 | ADR-0001 | Rozdělení rolí: Relying Party a vydavatel vlastního tokenu |
 | ADR-0002 | PKCE i u klienta, který má tajemství |
-| ADR-0004 | `SameSite=Lax` místo `Strict` |
+| ADR-0003 | Šifrovaný aplikační token místo podepsaného |
+| ADR-0004 | Relační cookie s `SameSite=Lax` |
 | ADR-0005 | Bez aplikačního frameworku |
-| ADR-0006 | `dir` + `A256GCM` místo asymetrického šifrování |
-| ADR-0007 | 404 místo 403 u cizích záznamů |
-| ADR-0008 | Verzování API v cestě |
+| ADR-0006 | Odpověď 404 místo 403 u cizích záznamů |
+| ADR-0007 | Verzování rozhraní v cestě |
