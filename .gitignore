@@ -1,6 +1,9 @@
 /vendor/
 /var/
-/keys/
+
+# Key material never enters the repository; the instructions for creating it do.
+/keys/*
+!/keys/README.md
 .local
 .env
 .env.local
