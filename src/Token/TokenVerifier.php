@@ -54,11 +54,9 @@ final class TokenVerifier
             // signed token cannot be presented in place of an encrypted one.
             $jwe = (new CompactSerializer())->unserialize($token);
 
-            // A256GCM has a 128 bit authentication tag, and the whole integrity
-            // guarantee rests on it. OpenSSL accepts shorter GCM tags, so a token whose
-            // tag has simply been cut short still decrypts — with the forgery odds
-            // dropping from 2^-128 to whatever is left. Checked here, because the
-            // library does not check it.
+            // RFC 7518 fixes the A256GCM authentication tag at 128 bits, and the whole
+            // integrity guarantee of dir + A256GCM rests on it (ADR-0003). The length
+            // is therefore established here rather than assumed.
             if (strlen((string) $jwe->getTag()) !== self::TAG_BYTES) {
                 throw new UnauthorizedException(
                     'Session token is missing or expired.',
