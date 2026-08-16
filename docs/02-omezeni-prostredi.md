@@ -152,6 +152,25 @@ Konfigurační soubory slouží jako doplněk, nikoli jako jediný nositel ochra
 Po prvním nasazení je proto namístě přeověřit, zda se soubory, které nemají být veřejně
 čitelné, skutečně neservírují.
 
+### OMZ-09 — Chybějící seznam kořenových autorit ve vývojovém prostředí
+
+Vývojové prostředí nemělo nastavený seznam důvěryhodných kořenových autorit. Distribuce
+PHP pro Windows jej neobsahuje a příslušné direktivy byly prázdné. Zjištěno až při
+implementaci, ověřeno výpisem hledaných cest — žádná z nich neexistovala.
+
+**Dopad.** Jakékoli zabezpečené spojení selhalo, včetně stažení discovery dokumentu
+a sady klíčů poskytovatele identity. Bez nich nelze ověřit podpis tvrzení o identitě,
+tedy nelze se přihlásit.
+
+Riziko není v samotném selhání, ale v nabízejícím se řešení: vypnout ověřování certifikátu
+protistrany. V aplikaci, jejíž účelem je ověřovat důvěryhodnost tvrzení, by šlo o protimluv —
+důvěra v obsah zprávy nemůže stavět na neověřeném kanálu.
+
+**Reakce návrhu.** Žádná. Jde o mezeru v konfiguraci vývojového prostředí, nikoli o vlastnost,
+na kterou by se měl návrh přizpůsobovat. Seznam byl do vývojového prostředí doplněn;
+produkční Debian jej má systémově. Ověřování certifikátů zůstává zapnuté v obou prostředích
+a kód se nezměnil.
+
 ---
 
 ## 4. Ověřená dostupnost rozšíření
@@ -206,5 +225,7 @@ Tři zjištění by se bez předchozího ověření projevila až selháním na 
 rozdíl ve verzi jazyka (OMZ-01), chování reverse proxy (OMZ-03) a nedostupnost
 provozních logů (OMZ-04). Právě proto bylo ověření prostředí zařazeno před návrh.
 
-Jedno omezení (OMZ-08) bylo nalezeno až během implementace. Dokument byl doplněn zpětně —
-zjištění o prostředí patří sem, nikoli do poznámek u kódu.
+Dvě omezení (OMZ-08 a OMZ-09) byla nalezena až během implementace. Dokument byl doplněn
+zpětně — zjištění o prostředí patří sem, nikoli do poznámek u kódu. Obě se týkají rozdílu
+mezi vývojovým a produkčním prostředím, tedy právě té kategorie, která se při prvotním
+ověřování odhaluje nejhůř.
