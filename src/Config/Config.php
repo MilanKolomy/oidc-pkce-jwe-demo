@@ -62,6 +62,14 @@ final class Config
             throw new ConfigurationException('Missing configuration values: ' . implode(', ', $missing) . '.');
         }
 
+        // Optional: the default port covers most installations, and PDO cannot take
+        // host and port as one string.
+        $port = trim((string) ($values['DB_PORT'] ?? ''));
+
+        if ($port !== '' && preg_match('/^\d+$/', $port) !== 1) {
+            throw new ConfigurationException(sprintf('DB_PORT must be a number, got "%s".', $port));
+        }
+
         $environment = trim($values['APP_ENV']);
 
         if (!in_array($environment, self::ENVIRONMENTS, true)) {
@@ -74,7 +82,12 @@ final class Config
 
         return new self(
             $environment,
-            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', trim($values['DB_HOST']), trim($values['DB_NAME'])),
+            sprintf(
+                'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+                trim($values['DB_HOST']),
+                $port === '' ? 3306 : (int) $port,
+                trim($values['DB_NAME']),
+            ),
             trim($values['DB_USER']),
             // The only value allowed to be empty: local MySQL installations often have none.
             (string) ($values['DB_PASSWORD'] ?? ''),
