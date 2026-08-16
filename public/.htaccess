@@ -1,0 +1,25 @@
+# Everything that is not an existing file is handled by the front controller.
+# On production this file is the only way to configure the server: hosting
+# configuration cannot be changed (OMZ-02).
+
+Options -Indexes
+
+# Measured in development: Apache served .user.ini with 200, because it only blocks
+# .ht* by default. Production was not measured — it is a different server, and some
+# hosts block the file themselves. This rule is therefore a safeguard against an
+# unknown, not the fix for a confirmed hole; it is worth re-checking after the first
+# deployment.
+#
+# It denies the whole class rather than that one name, so a dotfile added to the
+# docroot later is covered without anyone having to remember this.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
