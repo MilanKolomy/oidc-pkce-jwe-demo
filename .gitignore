@@ -1,0 +1,9 @@
+/vendor/
+/var/
+/keys/
+.local
+.env
+.env.local
+.DS_Store
+.idea/
+.vscode/
