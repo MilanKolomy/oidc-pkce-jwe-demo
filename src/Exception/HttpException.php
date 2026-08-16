@@ -20,8 +20,23 @@ abstract class HttpException extends RuntimeException
         private readonly string $problemType,
         private readonly string $title,
         string $detail = '',
+        private readonly ?string $logReason = null,
     ) {
         parent::__construct($detail);
+    }
+
+    /**
+     * What actually happened, for the log only.
+     *
+     * Some refusals are deliberately uninformative to the caller: every way of
+     * failing to present a valid token is the same 401, because the difference
+     * between "expired" and "not decryptable" says something about the application
+     * and nothing the caller can act on. That difference still has to be diagnosable,
+     * so it goes here and the front controller writes it to the log.
+     */
+    public function logReason(): ?string
+    {
+        return $this->logReason;
     }
 
     public function status(): int

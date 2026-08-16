@@ -44,12 +44,13 @@ try {
     $httpClient = new HttpClient();
     $database = new Database($config);
 
+    $tokenKey = TokenKey::fromFile($root . '/keys/app-token.key');
     $auth = new AuthController(
         new Discovery($httpClient),
         new TokenClient($httpClient, $config->googleClientId, $config->googleClientSecret),
         new IdTokenValidator(new JwksCache($httpClient, $root . '/var/jwks.json'), $config->googleClientId),
         new UserRepository($database),
-        new TokenIssuer(TokenKey::fromFile($root . '/keys/app-token.key')),
+        new TokenIssuer($tokenKey),
         $urls,
         $logger,
         $config->googleClientId,
@@ -62,8 +63,18 @@ try {
 
     $response = $router->dispatch($request);
 } catch (HttpException $exception) {
-    // Expected outcomes described in docs/openapi.yaml, not failures. Not logged:
-    // a stream of 404s would bury the entries that matter.
+    // Expected outcomes described in docs/openapi.yaml, not failures, so they are not
+    // logged by default — a stream of 404s would bury the entries that matter. The
+    // exceptions that deliberately tell the caller less than they know carry the real
+    // reason, and that much is worth keeping.
+    if ($exception->logReason() !== null) {
+        $logger->warning(sprintf('%d %s', $exception->status(), $exception->title()), [
+            'reason' => $exception->logReason(),
+            'method' => $request->method,
+            'path' => $request->path,
+        ]);
+    }
+
     $response = Problem::fromException($exception, $request->path);
 } catch (ConfigurationException $exception) {
     // Startup failed before the environment was known, so the response is the careful

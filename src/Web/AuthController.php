@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Web;
 
+use App\Api\Authentication;
 use App\Exception\BadRequestException;
 use App\Http\Request;
 use App\Http\Response;
@@ -29,8 +30,6 @@ final class AuthController
     private const SESSION_STATE = 'oidc_state';
     private const SESSION_NONCE = 'oidc_nonce';
     private const SESSION_VERIFIER = 'oidc_code_verifier';
-
-    public const COOKIE_NAME = 'app_token';
 
     public function __construct(
         private readonly Discovery $discovery,
@@ -141,7 +140,7 @@ final class AuthController
 
         $token = $this->tokenIssuer->issue($userId, $now);
 
-        setcookie(self::COOKIE_NAME, $token, [
+        setcookie(Authentication::COOKIE_NAME, $token, [
             'expires' => $now->getTimestamp() + TokenIssuer::LIFETIME_SECONDS,
             'path' => '/',
             'secure' => true,
