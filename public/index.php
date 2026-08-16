@@ -50,6 +50,34 @@ $correlationId = bin2hex(random_bytes(8));
 $request = Request::fromGlobals();
 $logger = new Logger($root . '/var/app.log', $correlationId);
 $config = null;
+$view = null;
+
+/**
+ * A browser gets a page, /api/ gets RFC 7807 — for failures as well, which is where
+ * the difference matters most: someone who followed a link is least able to do
+ * anything with a JSON document.
+ *
+ * Returns null when a page cannot be produced, either because the caller wants JSON
+ * or because rendering one failed. Rendering is guarded on purpose: an error raised
+ * inside the error handler would otherwise escape it, and the response would go out
+ * as 200 with a stack trace in the body.
+ */
+$asPage = static function (int $status, string $heading, ?string $detail, ?string $failureId) use (&$view, $request): ?Response {
+    if ($request->isApi() || !$view instanceof View) {
+        return null;
+    }
+
+    try {
+        return Response::html($view->page('error', $heading, null, [
+            'status' => $status,
+            'heading' => $heading,
+            'detail' => $detail ?? '',
+            'correlationId' => $failureId,
+        ]), $status);
+    } catch (Throwable) {
+        return null;
+    }
+};
 
 try {
     $config = Config::load($root . '/.env');
@@ -150,23 +178,18 @@ try {
         ]);
     }
 
-    // The API answers in RFC 7807; a browser gets a page. Same outcome, different
-    // audience — a JSON document is not an answer to someone following a link.
-    $response = $request->isApi() || !isset($view)
-        ? Problem::fromException($exception, $request->path)
-        : Response::html($view->page('error', $exception->title(), null, [
-            'status' => $exception->status(),
-            'heading' => $exception->title(),
-            'detail' => $exception->detail() ?? '',
-            'correlationId' => null,
-        ]), $exception->status());
+    $response = $asPage($exception->status(), $exception->title(), $exception->detail(), null)
+        ?? Problem::fromException($exception, $request->path);
 } catch (ConfigurationException $exception) {
     // Startup failed before the environment was known, so the response is the careful
     // one either way. The message names what is missing, never a value, and goes to
     // the log — where an operator without shell access can still reach it.
     $logger->error('Configuration error: ' . $exception->getMessage());
 
-    $response = Problem::internal($request->path, $correlationId);
+    // $view does not exist yet at this point, so this is a JSON answer in practice.
+    // Asked through the same path anyway, so the rule stays in one place.
+    $response = $asPage(500, 'Something went wrong', null, $correlationId)
+        ?? Problem::internal($request->path, $correlationId);
 } catch (Throwable $exception) {
     $logger->error(sprintf('Unhandled %s: %s', $exception::class, $exception->getMessage()), [
         'file' => $exception->getFile() . ':' . $exception->getLine(),
@@ -174,13 +197,12 @@ try {
         'path' => $request->path,
     ]);
 
-    $response = Problem::internal(
-        $request->path,
-        $correlationId,
-        // If the failure happened before the configuration was read, the environment
-        // is unknown — say nothing, which is the production behaviour.
-        ($config?->isProduction() ?? true) ? null : $exception->getMessage(),
-    );
+    // If the failure happened before the configuration was read, the environment is
+    // unknown — say nothing, which is the production behaviour.
+    $detail = ($config?->isProduction() ?? true) ? null : $exception->getMessage();
+
+    $response = $asPage(500, 'Something went wrong', $detail, $correlationId)
+        ?? Problem::internal($request->path, $correlationId, $detail);
 }
 
 $response->send();

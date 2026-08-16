@@ -136,6 +136,11 @@ Nasazení spočívá v nahrání souborů včetně adresáře `vendor/`, vytvoř
 [`database/schema.sql`](database/schema.sql), doplnění `.env` podle `.env.example`
 a vytvoření šifrovacího klíče podle [`keys/README.md`](keys/README.md).
 
+**Poznámka ke Swagger UI.** Specifikace uvádí jako první server produkci, takže se
+Swagger UI implicitně ptá jí. Při zkoušení proti jinému prostředí je nutné přepnout
+volbu serveru **na dvou místech**: v hlavičce stránky a ještě zvlášť u každé operace,
+kde má přednost volba operace nad globální. Není to chyba nasazení.
+
 ---
 
 ## Licence
