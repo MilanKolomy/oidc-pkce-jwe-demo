@@ -42,4 +42,14 @@ final class Request
     {
         return str_starts_with($this->path, '/api/');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonBody(): array
+    {
+        $decoded = json_decode($this->body, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
 }

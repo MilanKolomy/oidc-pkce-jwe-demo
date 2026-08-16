@@ -20,27 +20,31 @@ use DateTimeImmutable;
 final class ValidityChecker
 {
     /**
+     * Takes the window rather than a ParsedCertificate, because a check is also run
+     * on a certificate already in the registry, where only the stored dates are at
+     * hand and re-parsing the PEM would buy nothing.
+     *
      * @return array{0: ValidityStatus, 1: string} the outcome and a note for the history
      */
-    public function check(ParsedCertificate $certificate, DateTimeImmutable $now): array
+    public function check(DateTimeImmutable $validFrom, DateTimeImmutable $validTo, DateTimeImmutable $now): array
     {
-        if ($now < $certificate->validFrom) {
+        if ($now < $validFrom) {
             return [
                 ValidityStatus::NotYetValid,
-                sprintf('Becomes valid in %s.', $this->days($now, $certificate->validFrom)),
+                sprintf('Becomes valid in %s.', $this->days($now, $validFrom)),
             ];
         }
 
-        if ($now > $certificate->validTo) {
+        if ($now > $validTo) {
             return [
                 ValidityStatus::Expired,
-                sprintf('Expired %s ago.', $this->days($certificate->validTo, $now)),
+                sprintf('Expired %s ago.', $this->days($validTo, $now)),
             ];
         }
 
         return [
             ValidityStatus::Valid,
-            sprintf('Expires in %s.', $this->days($now, $certificate->validTo)),
+            sprintf('Expires in %s.', $this->days($now, $validTo)),
         ];
     }
 

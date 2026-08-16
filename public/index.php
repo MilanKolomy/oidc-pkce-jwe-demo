@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Api\Authentication;
+use App\Api\AuthorityController;
+use App\Api\CertificateController;
+use App\Api\UserController;
+use App\Certificate\CertificateParser;
+use App\Certificate\ValidityChecker;
 use App\Config\Config;
 use App\Exception\ConfigurationException;
 use App\Exception\HttpException;
@@ -16,10 +22,15 @@ use App\Oidc\HttpClient;
 use App\Oidc\IdTokenValidator;
 use App\Oidc\JwksCache;
 use App\Oidc\TokenClient;
+use App\Persistence\CertificateAuthorityRepository;
+use App\Persistence\CertificateCheckRepository;
+use App\Persistence\CertificateRepository;
 use App\Persistence\Database;
+use App\Persistence\KeyUsageRepository;
 use App\Persistence\UserRepository;
 use App\Token\TokenIssuer;
 use App\Token\TokenKey;
+use App\Token\TokenVerifier;
 use App\Web\AuthController;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -56,10 +67,34 @@ try {
         $config->googleClientId,
     );
 
+    $authentication = new Authentication(new TokenVerifier($tokenKey));
+    $users = new UserRepository($database);
+
+    $certificates = new CertificateController(
+        $authentication,
+        $database,
+        new CertificateRepository($database),
+        new CertificateAuthorityRepository($database),
+        new KeyUsageRepository($database),
+        new CertificateCheckRepository($database),
+        new CertificateParser(),
+        new ValidityChecker(),
+        $urls,
+        $logger,
+    );
+
     $router = new Router();
 
     $router->add('GET', '/login', $auth->login(...));
     $router->add('GET', '/callback', $auth->callback(...));
+
+    // The six endpoints of docs/openapi.yaml, and nothing beyond them.
+    $router->add('GET', '/api/v1/me', (new UserController($authentication, $users))->show(...));
+    $router->add('GET', '/api/v1/certificates', $certificates->index(...));
+    $router->add('POST', '/api/v1/certificates', $certificates->create(...));
+    $router->add('GET', '/api/v1/certificates/{certificateId}', $certificates->show(...));
+    $router->add('POST', '/api/v1/certificates/{certificateId}/checks', $certificates->check(...));
+    $router->add('GET', '/api/v1/authorities', (new AuthorityController($authentication, new CertificateAuthorityRepository($database)))->index(...));
 
     $response = $router->dispatch($request);
 } catch (HttpException $exception) {

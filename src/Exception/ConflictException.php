@@ -6,8 +6,8 @@ namespace App\Exception;
 
 final class ConflictException extends HttpException
 {
-    public function __construct(string $detail = '')
+    public function __construct(string $detail = '', ?string $logReason = null)
     {
-        parent::__construct(409, 'conflict', 'Conflict', $detail);
+        parent::__construct(409, 'conflict', 'Conflict', $detail, $logReason);
     }
 }

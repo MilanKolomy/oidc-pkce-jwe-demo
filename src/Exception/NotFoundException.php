@@ -10,8 +10,8 @@ namespace App\Exception;
  */
 final class NotFoundException extends HttpException
 {
-    public function __construct(string $detail = '')
+    public function __construct(string $detail = '', ?string $logReason = null)
     {
-        parent::__construct(404, 'not-found', 'Not found', $detail);
+        parent::__construct(404, 'not-found', 'Not found', $detail, $logReason);
     }
 }
