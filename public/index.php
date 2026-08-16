@@ -9,7 +9,18 @@ use App\Http\Problem;
 use App\Http\Request;
 use App\Http\Router;
 use App\Http\Session;
+use App\Http\UrlBuilder;
 use App\Log\Logger;
+use App\Oidc\Discovery;
+use App\Oidc\HttpClient;
+use App\Oidc\IdTokenValidator;
+use App\Oidc\JwksCache;
+use App\Oidc\TokenClient;
+use App\Persistence\Database;
+use App\Persistence\UserRepository;
+use App\Token\TokenIssuer;
+use App\Token\TokenKey;
+use App\Web\AuthController;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -29,9 +40,25 @@ try {
 
     Session::configure();
 
+    $urls = new UrlBuilder($_SERVER);
+    $httpClient = new HttpClient();
+    $database = new Database($config);
+
+    $auth = new AuthController(
+        new Discovery($httpClient),
+        new TokenClient($httpClient, $config->googleClientId, $config->googleClientSecret),
+        new IdTokenValidator(new JwksCache($httpClient, $root . '/var/jwks.json'), $config->googleClientId),
+        new UserRepository($database),
+        new TokenIssuer(TokenKey::fromFile($root . '/keys/app-token.key')),
+        $urls,
+        $logger,
+        $config->googleClientId,
+    );
+
     $router = new Router();
 
-    // Routes are registered here as the application grows.
+    $router->add('GET', '/login', $auth->login(...));
+    $router->add('GET', '/callback', $auth->callback(...));
 
     $response = $router->dispatch($request);
 } catch (HttpException $exception) {
