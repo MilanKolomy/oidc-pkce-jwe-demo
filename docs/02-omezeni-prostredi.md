@@ -27,7 +27,7 @@ o rozhodnutích.
 | | Vývojové | Produkční |
 |---|---|---|
 | PHP | 8.2.30 | **8.1.33** |
-| Rozhraní serveru | Apache | FPM/FastCGI za reverse proxy |
+| Rozhraní serveru | Apache s **mod_php** | **FPM/FastCGI** za reverse proxy |
 | Operační systém | — | Debian |
 | Databáze | MySQL 8.0.x | MySQL 8.0.34 |
 | Přístup k příkazové řádce | ano | **ne** |
@@ -101,8 +101,15 @@ záměně kódu. Slabě nastavená cookie oslabuje ochranu, kterou návrh na tě
 staví.
 
 **Reakce návrhu.** Parametry cookie jsou nastaveny **dvojitě** — souborem `.user.ini`
-v adresáři aplikace a zároveň explicitně v kódu při startu aplikace. Druhá cesta je
-nutná proto, že vývojové prostředí soubor `.user.ini` nemusí načítat. Naplňuje NFR-03.
+v adresáři aplikace a zároveň explicitně v kódu při startu aplikace.
+
+Dvojí nastavení není opatrnost, ale nutnost. Soubor `.user.ini` **není ve vývojovém
+prostředí účinný vůbec** (viz OMZ-08), takže tam celou ochranu nese pouze kód. Na produkci
+je naopak `.user.ini` účinný, ale jde o konfiguraci cizího stroje, kterou nelze vynutit.
+Ani jedna cesta tedy sama o sobě nestačí pro obě prostředí.
+
+Ověřeno měřením: po startu aplikace mají parametry relační cookie požadované hodnoty
+v obou případech. Naplňuje NFR-03.
 
 ### OMZ-06 — Verze databáze
 
@@ -125,6 +132,25 @@ spolehlivé sdílené úložiště. Při souběžném běhu více procesů můž
 **Reakce návrhu.** Cachování je navrženo jako **volitelné zrychlení, nikoli podmínka
 správné funkce**. Aplikace musí fungovat i tehdy, když je mezipaměť prázdná nebo
 nedostupná. Naplňuje NFR-04.
+
+### OMZ-08 — Odlišné rozhraní serveru ve vývoji a na produkci
+
+Vývojové prostředí běží na Apache s modulem `mod_php`, produkce na FPM/FastCGI. Zjištěno
+až při implementaci, nikoli při prvotním ověření prostředí.
+
+**Dopad.** Rozdíl není pouze formální. Pod `mod_php` se **nepoužívají soubory `.user.ini`**
+— ty jsou vlastností CGI a FastCGI rozhraní. Konfigurace, která na produkci platí, je
+lokálně bez účinku, a chyba v ní se tedy neprojeví tam, kde se vyvíjí.
+
+Rozdíl se týká i způsobu, jakým se uplatňují direktivy PHP v `.htaccess`, a obsluhy
+souběžných požadavků.
+
+**Reakce návrhu.** Nastavení, na kterých závisí bezpečnost, se provádějí **v kódu**.
+Konfigurační soubory slouží jako doplněk, nikoli jako jediný nositel ochrany (viz OMZ-05).
+
+**Zbytkové riziko.** Chování konfigurace na produkci nelze z vývojového prostředí ověřit.
+Po prvním nasazení je proto namístě přeověřit, zda se soubory, které nemají být veřejně
+čitelné, skutečně neservírují.
 
 ---
 
@@ -179,3 +205,6 @@ a konfigurace, nikoli proveditelnost samotného řešení.
 Tři zjištění by se bez předchozího ověření projevila až selháním na produkci:
 rozdíl ve verzi jazyka (OMZ-01), chování reverse proxy (OMZ-03) a nedostupnost
 provozních logů (OMZ-04). Právě proto bylo ověření prostředí zařazeno před návrh.
+
+Jedno omezení (OMZ-08) bylo nalezeno až během implementace. Dokument byl doplněn zpětně —
+zjištění o prostředí patří sem, nikoli do poznámek u kódu.
