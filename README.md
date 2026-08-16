@@ -35,8 +35,10 @@ omezení cílového prostředí, po návrh řešení a jeho dokumentaci.
 Hlavním výstupem je proto **dokumentace**, nikoli kód. Implementace slouží jako důkaz
 realizovatelnosti návrhu.
 
-Implementační část vznikla s asistencí nástroje pro generování kódu. Analýza, návrh
-a všechna rozhodnutí zaznamenaná v `docs/adr/` jsou prací autora.
+Dokumentaci v `docs/` napsal autor. Implementaci psal Claude Code podle zadání
+v [`CLAUDE.md`](CLAUDE.md) a podle této dokumentace — v devíti krocích, z nichž každý
+autor procházel a schvaloval. Rozhodnutí zaznamenaná v `docs/adr/` a rozsah projektu
+jsou prací autora; historie commitů odpovídá skutečnému postupu.
 
 ---
 
@@ -115,8 +117,10 @@ Náměty na pokračování jsou v [05 — Možná rozšíření](docs/05-mozna-r
 │   ├── openapi.yaml
 │   └── adr/                  záznamy o rozhodnutích
 ├── src/                      implementace
+├── templates/                šablony rozhraní
 ├── database/                 schéma a migrace
-└── public/                   veřejný adresář
+├── public/                   veřejný adresář
+└── CLAUDE.md                 zadání pro nástroj, podle kterého vznikl kód
 ```
 
 Těžištěm je `docs/`. Kód slouží jako doklad realizovatelnosti návrhu.
