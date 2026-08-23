@@ -131,11 +131,18 @@ Těžištěm je `docs/`. Kód slouží jako doklad realizovatelnosti návrhu.
 
 Dokumentace i implementace jsou dokončeny.
 
-Aplikace běží lokálně v celém rozsahu: přihlášení účtem Google, vložení certifikátu,
-detail, kontrola platnosti, všech šest endpointů rozhraní a Swagger UI. Na produkci
-zatím nasazena není.
+**Běžící aplikace: https://monet.super-web.cz/**
 
-Vývojové prostředí je popsáno v [02 — Omezení prostředí](docs/02-omezeni-prostredi.md).
+Funguje celý rozsah: přihlášení účtem Google, vložení certifikátu, detail, kontrola
+platnosti, všech šest endpointů rozhraní a [Swagger UI](https://monet.super-web.cz/swagger/).
+Přihlášení vyžaduje účet Google; aplikace si o uživateli ukládá pouze identifikátor,
+jméno a e-mailovou adresu.
+
+Nasazením se ověřilo i to, co z vývojového prostředí ověřit nešlo — sestavení návratové
+adresy za reverse proxy (OMZ-03) a dohledání příčiny chyby v provozním logu bez přístupu
+k příkazové řádce (OMZ-04). Obojí je popsáno v
+[02 — Omezení prostředí](docs/02-omezeni-prostredi.md).
+
 Nasazení spočívá v nahrání souborů včetně adresáře `vendor/`, vytvoření schématu podle
 [`database/schema.sql`](database/schema.sql), doplnění `.env` podle `.env.example`
 a vytvoření šifrovacího klíče podle [`keys/README.md`](keys/README.md).
